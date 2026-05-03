@@ -155,13 +155,11 @@ def execute_read_transcript(transcript: Transcript, query: str) -> dict[str, Any
     }
 
 
-def execute_check_signal_coverage(extracted_signals_json: str) -> dict[str, Any]:
+def execute_check_signal_coverage(extracted_signals_json: Any) -> dict[str, Any]:
     try:
-        signals = json.loads(extracted_signals_json or "{}")
-    except json.JSONDecodeError as exc:
-        return {"error": f"invalid JSON: {exc}"}
-    if not isinstance(signals, dict):
-        return {"error": "extracted_signals must be a JSON object"}
+        signals = _coerce_to_dict(extracted_signals_json, "extracted_signals")
+    except ValueError as exc:
+        return {"error": str(exc)}
 
     covered = sorted(f for f in KEY_FIELDS if _is_meaningful(signals.get(f)))
     missing = sorted(f for f in KEY_FIELDS if not _is_meaningful(signals.get(f)))
@@ -182,11 +180,11 @@ def execute_check_signal_coverage(extracted_signals_json: str) -> dict[str, Any]
     }
 
 
-def execute_validate_draft(draft_json: str) -> dict[str, Any]:
+def execute_validate_draft(draft_json: Any) -> dict[str, Any]:
     try:
-        data = json.loads(draft_json or "{}")
-    except json.JSONDecodeError as exc:
-        return {"valid": False, "errors": [f"invalid JSON: {exc}"]}
+        data = _coerce_to_dict(draft_json, "draft")
+    except ValueError as exc:
+        return {"valid": False, "errors": [str(exc)]}
     try:
         OpportunityUpdateDraft.model_validate(data)
     except ValidationError as exc:
@@ -196,6 +194,32 @@ def execute_validate_draft(draft_json: str) -> dict[str, Any]:
         ]
         return {"valid": False, "errors": errors}
     return {"valid": True, "errors": []}
+
+
+def _coerce_to_dict(value: Any, field_name: str) -> dict[str, Any]:
+    """Accept either a JSON string or an already-parsed dict.
+
+    OpenAI function-calling normally hands tools a JSON STRING in their
+    ``arguments`` field, but for parameters the model can also emit a JSON
+    object literal that the SDK delivers as a dict. Both shapes need to
+    work; otherwise the agent 500s the moment the model picks the literal
+    form.
+    """
+    if value is None or value == "":
+        return {}
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, (str, bytes, bytearray)):
+        try:
+            parsed = json.loads(value or "{}")
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{field_name}: invalid JSON ({exc})") from exc
+        if not isinstance(parsed, dict):
+            raise ValueError(f"{field_name}: must be a JSON object")
+        return parsed
+    raise ValueError(
+        f"{field_name}: expected JSON object (or JSON string), got {type(value).__name__}"
+    )
 
 
 def _tokenize(s: str) -> list[str]:
