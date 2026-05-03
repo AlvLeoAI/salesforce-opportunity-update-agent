@@ -46,7 +46,10 @@ def build_chat_client(transcript: Transcript) -> tuple[ChatFn, list[str]]:
     Returns ``(chat_fn, mode_warnings)``. The warnings are appended to the
     final result so the UI and JSON make the operating mode obvious.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
+    # Strip whitespace defensively: pasted keys often come with a trailing
+    # newline, which httpx rejects as an illegal header value (header
+    # injection guard) and that surfaces as a 500 to the reviewer.
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip() or None
     force_sim = os.getenv("SALESFORCE_AGENT_FORCE_FALLBACK", "").lower() in {
         "1",
         "true",
