@@ -140,10 +140,11 @@ The repo is structured so the backend deploys to Railway and the frontend to Ver
 
 ### Frontend → Vercel
 
-1. Create a new Vercel project pointing at the same repo. The `vercel.json` at the root pins the build command to `cd frontend && npm install && npm run build` and the output to `frontend/dist`.
-2. Set the project's environment variable:
+1. Create a new Vercel project pointing at the same repo.
+2. In **Project Settings → General → Root Directory**, set the root directory to `frontend`. Vercel auto-detects Vite from `frontend/package.json` and configures the build (`npm run build`) and output (`dist`) automatically — no `vercel.json` is required.
+3. Set the project's environment variable:
    - `VITE_API_URL` — the Railway URL from the previous step (e.g. `https://opportunity-agent.up.railway.app`). With this set, the "Try your own transcript" tab POSTs to the deployed backend; without it, the tab points at `http://localhost:8000` and the static tabs still work.
-3. After the first Vercel deploy, copy the `*.vercel.app` URL into Railway's `FRONTEND_URL` so CORS allows it (or leave `FRONTEND_URL=*` for an open demo).
+4. After the first Vercel deploy, copy the `*.vercel.app` URL into Railway's `FRONTEND_URL` so CORS allows it (or leave `FRONTEND_URL=*` for an open demo).
 
 `frontend/.env.example` documents the variable for local use.
 
