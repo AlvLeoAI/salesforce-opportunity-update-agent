@@ -158,7 +158,10 @@ def _plan_for_transcript(transcript: Transcript) -> list[AssistantTurn]:
     recommendation = coverage["recommendation"]
     coverage_ratio = coverage["coverage_ratio"]
 
-    if recommendation == "draft":
+    # "review" routes to the draft path with lower confidence (calibration
+    # parity with the live system prompt). Only "abstain" produces an
+    # AbstainResult.
+    if recommendation in ("draft", "review"):
         draft = _build_draft(transcript, extracted, coverage_ratio)
         draft_json = json.dumps(draft)
         plan.append(_assistant_with_calls([
@@ -173,6 +176,11 @@ def _plan_for_transcript(transcript: Transcript) -> list[AssistantTurn]:
 
 
 def _draft_confidence(coverage_ratio: float) -> float:
+    # "review" tier (0.2 <= ratio < 0.4): confidence tracks coverage so the
+    # reviewer sees a clearly preliminary draft. "draft" tier (>= 0.4): higher
+    # baseline because signal coverage is solid.
+    if coverage_ratio < 0.4:
+        return round(max(0.3, coverage_ratio + 0.05), 2)
     return round(0.5 + (coverage_ratio * 0.45), 2)
 
 

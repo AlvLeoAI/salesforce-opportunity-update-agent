@@ -46,9 +46,10 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "description": (
                 "Given a JSON object of fields you have transcript evidence "
                 "for, return coverage_ratio and a recommendation: 'draft' "
-                "(>= 0.4), 'abstain' (< 0.2), or 'review' (in between). Call "
-                "this BEFORE composing the final JSON. Honor the recommendation "
-                "to decide draft vs. abstain."
+                "(>= 0.4), 'review' (>= 0.2), or 'abstain' (< 0.2). Call this "
+                "BEFORE composing the final JSON. Both 'draft' and 'review' "
+                "produce a draft - 'review' just means lower confidence. Only "
+                "'abstain' produces an AbstainResult."
             ),
             "parameters": {
                 "type": "object",
@@ -60,8 +61,9 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                             "evidence for. Recognized keys: stage, amount_usd, "
                             "close_date, next_step, champion, economic_buyer, "
                             "decision_criteria, decision_process, paper_process, "
-                            "competition, metrics, identify_pain. Values may be "
-                            "summaries; null/empty values are treated as missing."
+                            "competition, metrics, identify_pain, risks, "
+                            "last_touch_summary. Values may be summaries; "
+                            "null/empty values are treated as missing."
                         ),
                     }
                 },
@@ -106,6 +108,8 @@ KEY_FIELDS: tuple[str, ...] = (
     "competition",
     "metrics",
     "identify_pain",
+    "risks",
+    "last_touch_summary",
 )
 
 

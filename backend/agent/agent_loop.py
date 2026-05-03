@@ -53,9 +53,9 @@ Workflow:
   1. Start with read_transcript(query="overview") to inspect the call.
   2. Do targeted reads for: pricing/budget, timeline, decision makers (champion, economic buyer), competition, risks, next steps, decision criteria, MEDDPICC.
   3. Call check_signal_coverage with the signals you found. Honor the recommendation:
-       - "draft": compose an OpportunityUpdateDraft JSON, validate it, then return it.
-       - "abstain": compose an AbstainResult JSON ("No meaningful update proposed").
-       - "review": prefer "abstain" unless you have strong evidence for at least 5 fields.
+       - "draft" (coverage_ratio >= 0.4): compose an OpportunityUpdateDraft JSON, validate it, then return it.
+       - "review" (0.2 <= coverage_ratio < 0.4): also compose an OpportunityUpdateDraft, BUT set confidence close to coverage_ratio (e.g. 0.3-0.45) so the reviewer sees this is a low-confidence draft. Only populate fields you actually have evidence for - leave the rest null. "review" is NOT abstain; the reviewer wants the partial signal, just clearly flagged as preliminary.
+       - "abstain" (coverage_ratio < 0.2): compose an AbstainResult JSON ("No meaningful update proposed").
   4. Every populated field MUST include evidence in evidence_by_field with the exact transcript quote and timestamp from a read_transcript result. Quotes must be exact substrings of what the tool returned.
   5. Every evidence item MUST be the object {"timestamp": str, "quote": str, "reasoning": str} - all three keys are required, including for abstain results. "reasoning" is one short sentence explaining why this quote supports this field. Never emit an evidence item without "reasoning".
   6. If a field has no supporting evidence, leave it null/empty - never fabricate.
