@@ -131,7 +131,7 @@ The repo is structured so the backend deploys to Railway and the frontend to Ver
 ### Backend → Railway
 
 1. Push this repo to GitHub and create a new Railway service from it.
-2. Railway auto-detects Python from the root `requirements.txt` (which delegates to `backend/requirements.txt`). The `Procfile` runs `cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT`.
+2. Railway auto-detects Python from the root `requirements.txt` (the canonical dependency list — `backend/requirements.txt` points up to it for local installs). The `Procfile` runs `cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT`.
 3. Set environment variables in the Railway dashboard:
    - `OPENAI_API_KEY` — required for live LLM calls. If unset, the API still responds, but every result carries the `simulator_demo` warning.
    - `FRONTEND_URL` — comma-separated list of allowed CORS origins (e.g. `https://your-app.vercel.app`). Use `*` while you're still wiring things up. Defaults to `http://localhost:5173,http://localhost:3000` if unset.
