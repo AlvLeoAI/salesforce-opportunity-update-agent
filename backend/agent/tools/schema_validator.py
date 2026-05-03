@@ -105,18 +105,23 @@ def validate_agent_output(
 
 
 def validate_evidence_coverage(draft: OpportunityUpdateDraft, transcript_text: str) -> None:
-    """Every populated field must have at least one evidence item.
+    """Advisory check: warn (don't raise) on populated fields with no evidence.
 
-    Quote matching against the transcript happens earlier in ``_scrub_evidence``
-    (fuzzy, lenient). By the time we reach this check, any remaining evidence
-    item has already been verified to match. If a populated field has no
-    evidence at all, that's a real model failure and we still raise so the
-    orchestrator's self-correction retry has a chance to fix it.
+    Quote matching happens earlier in ``_scrub_evidence`` (fuzzy, lenient).
+    By the time we reach this check, any remaining evidence item has already
+    been verified to match. If a populated field has no evidence at all, the
+    model likely inferred the value from context (e.g. stage from procurement
+    + pricing) - that's valid reasoning, not a failure. We surface it as a
+    warning so the reviewer knows the field isn't transcript-anchored, but
+    we never 422 on it.
     """
     for field_path in populated_draft_field_paths(draft):
         evidence_items = draft.evidence_by_field.get(field_path)
         if not evidence_items:
-            raise EvidenceCoverageError(f"missing evidence for populated field '{field_path}'")
+            draft.warnings.append(
+                f"evidence_filter: field '{field_path}' has no grounding quote; "
+                "value was inferred by the model and shown without transcript evidence"
+            )
 
 
 def validate_abstain_result(result: AbstainResult, transcript_text: str) -> None:
