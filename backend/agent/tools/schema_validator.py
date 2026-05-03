@@ -127,9 +127,15 @@ def validate_abstain_result(result: AbstainResult, transcript_text: str) -> None
     if "No meaningful update proposed" not in result.message:
         raise SchemaValidationError("abstain message must clearly state no update")
 
-    evidence_items = result.evidence_by_field.get("last_touch_summary")
-    if not evidence_items:
-        raise EvidenceCoverageError("missing evidence for abstain last_touch_summary")
+    # ``last_touch_summary`` is the value itself; supporting evidence is nice
+    # to have but not required. If the model omitted it (or every quote got
+    # scrubbed earlier), surface a warning so the reviewer knows the summary
+    # isn't transcript-anchored - never 422.
+    if not result.evidence_by_field.get("last_touch_summary"):
+        result.warnings.append(
+            "evidence_filter: abstain last_touch_summary has no transcript "
+            "evidence; the summary is shown as-is without grounding quotes"
+        )
 
 
 def quote_matches_transcript(
